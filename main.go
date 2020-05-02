@@ -4,7 +4,7 @@ import(
 	"fmt"
 )
 
-func main()  {
-	fmt.Printf("Hello world!")
+func main(){
+	
 }
 //gitcommit
