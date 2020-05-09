@@ -8,7 +8,6 @@ import (
 	"os"
 
 	"github.com/EvgenyiK/snippetbox/pkg/models/mysql"
-	"github.com/EvgenyiK/snippetbox/pkg/models/mysql"
 
 	_ "github.com/go-sql-driver/mysql"
 )
