@@ -7,7 +7,7 @@ import (
 )
 
 // The serverError helper writes an error message and stack trace to the errorLog,
-func (app *application) serveError(w http.ResponseWriter, err error) {
+func (app *application) serverError(w http.ResponseWriter, err error) {
 	trace := fmt.Sprintf("%s\n%s", err.Error(), debug.Stack())
 	app.errorLog.Output(2,trace)
 
