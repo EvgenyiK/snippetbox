@@ -3,6 +3,7 @@ package main
 import (
 	"html/template"
 	"path/filepath"
+	"time"
 
 	"github.com/EvgenyiK/snippetbox/pkg/models"
 )
@@ -17,6 +18,16 @@ type templateData struct {
 	Snippet  *models.Snippet
 	Snippets []*models.Snippet
 }
+
+// Create a humanDate function which returns a nicely formatted string
+func humanDate(t time.Time) string {
+	return t.Format("02 Jan 2006 at 15:04")
+	}
+
+// Initialize a template.FuncMap object and store it in a global variable.
+var functions = template.FuncMap{
+	"humanDate": humanDate,
+	}
 
 func newTemplateCache(dir string) (map[string]*template.Template, error) {
 	// Initialize a new map to act as the cache.
@@ -34,7 +45,7 @@ func newTemplateCache(dir string) (map[string]*template.Template, error) {
 		// and assign it to the name variable.
 		name := filepath.Base(page)
 		// Parse the page template file in to a template set.
-		ts, err := template.ParseFiles(page)
+		ts, err := template.New(name).Funcs(functions).ParseFiles(page)
 		if err != nil {
 			return nil, err
 		}
