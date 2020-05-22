@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
+	"unicode/utf8"
 
 	"github.com/EvgenyiK/snippetbox/pkg/models"
 )
@@ -20,7 +22,6 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		Snippets: s,
 	})
 }
-
 
 func (app *application) showSnippet(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.URL.Query().Get(":id"))
@@ -43,18 +44,48 @@ func (app *application) showSnippet(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (app *application)createSnippetForm(w http.ResponseWriter, r *http.Request){
-	app.render(w,r,"create.page.tmpl",nil)
+func (app *application) createSnippetForm(w http.ResponseWriter, r *http.Request) {
+	app.render(w, r, "create.page.tmpl", nil)
 }
 
 func (app *application) createSnippet(w http.ResponseWriter, r *http.Request) {
-	// Create some variables holding dummy data. We'll remove these later on
-	// during the build.
-	title := "O snail"
-	content := "O snail\nClimb Mount Fuji,\nBut slowly, slowly!\n\n– Kobayashi Issa"
-	expires := "7"
-	// Pass the data to the SnippetModel.Insert() method, receiving the
-	// ID of the new record back.
+	err := r.ParseForm()
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+	}
+
+	// Use the r.PostForm.Get() method to retrieve the relevant data fields
+	// from the r.PostForm map.
+	title := r.PostForm.Get("title")
+	content := r.PostForm.Get("content")
+	expires := r.PostForm.Get("expires")
+
+	// Initialize a map to hold any validation errors.
+	errors := make(map[string]string)
+	if strings.TrimSpace(title) == "" {
+		errors["title"] = "This field cannot be blank"
+	} else if utf8.RuneCountInString(title) > 100 {
+		errors["title"] = "This field is too long(maximum is 100 characters)"
+	}
+
+	if strings.TrimSpace(content) == "" {
+		errors["content"] = "This filed cannot be blank"
+	}
+
+	if strings.TrimSpace(expires) == "" {
+		errors["expires"] = "This field cannot be blank"
+	} else if expires != "365" && expires != "7" && expires != "1" {
+		errors["expires"] = "This field is invalid"
+	}
+
+	// If there are any errors, dump them in a plain text HTTP response and return
+	// from the handler.
+	if len(errors)>0 {
+		fmt.Fprint(w,errors)
+		return
+	}
+
+	// Create a new snippet record in the database using the form data.
 	id, err := app.snippets.Insert(title, content, expires)
 	if err != nil {
 		app.serverError(w, err)
