@@ -2,10 +2,10 @@ package main
 
 import (
 	"html/template"
-	"net/url"
 	"path/filepath"
 	"time"
 
+	"github.com/EvgenyiK/snippetbox/pkg/forms"
 	"github.com/EvgenyiK/snippetbox/pkg/models"
 )
 
@@ -16,21 +16,20 @@ any dynamic data that we want to pass to our HTML templates.
 
 type templateData struct {
 	CurrentYear int
-	FormData url.Values
-	FormErrors map[string]string
-	Snippet  *models.Snippet
-	Snippets []*models.Snippet
+	Form        *forms.Form
+	Snippet     *models.Snippet
+	Snippets    []*models.Snippet
 }
 
 // Create a humanDate function which returns a nicely formatted string
 func humanDate(t time.Time) string {
 	return t.Format("02 Jan 2006 at 15:04")
-	}
+}
 
 // Initialize a template.FuncMap object and store it in a global variable.
 var functions = template.FuncMap{
 	"humanDate": humanDate,
-	}
+}
 
 func newTemplateCache(dir string) (map[string]*template.Template, error) {
 	// Initialize a new map to act as the cache.
