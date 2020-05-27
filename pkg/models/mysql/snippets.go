@@ -64,13 +64,13 @@ func (m *SnippetModel) Latest() ([]*models.Snippet, error) {
 	// Write the SQL statement we want to execute.
 	stmt := `SELECT id,title,content,created,expires FROM snippets
 			 WHERE expires > UTC_TIMESTAMP() ORDER BY created DESC LIMIT 10`
-	
+
 	// Use the Query() method on the connection pool to execute
-	rows,err:=m.DB.Query(stmt)
+	rows, err := m.DB.Query(stmt)
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
-	
+
 	// We defer rows.Close() to ensure the sql.Rows resultset
 	defer rows.Close()
 
@@ -78,21 +78,21 @@ func (m *SnippetModel) Latest() ([]*models.Snippet, error) {
 	snippets := []*models.Snippet{}
 
 	// Use rows.Next to iterate through the rows in the resultset
-	for rows.Next(){
-		s:= &models.Snippet{}
+	for rows.Next() {
+		s := &models.Snippet{}
 		// Use rows.Scan() to copy the values from each field in the row to the
-	   // new Snippet object that we created.
-	   err=rows.Scan(&s.ID,&s.Title,&s.Content,&s.Created,&s.Expires)
-	   if err != nil {
-		   return nil,err
-	   }
-	   // Append it to the slice of snippets.
-	   snippets=append(snippets,s)
+		// new Snippet object that we created.
+		err = rows.Scan(&s.ID, &s.Title, &s.Content, &s.Created, &s.Expires)
+		if err != nil {
+			return nil, err
+		}
+		// Append it to the slice of snippets.
+		snippets = append(snippets, s)
 	}
 
 	//When the rows.Next() loop has finished we call rows.
-	if err=rows.Err();err!=nil{
-		return nil,err
+	if err = rows.Err(); err != nil {
+		return nil, err
 	}
 
 	// If everything went OK then return the Snippets slice.
