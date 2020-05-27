@@ -28,9 +28,9 @@ func main() {
 	addr := flag.String("addr", ":4000", "HTTP network address")
 	// Define a new command-line flag for the MySQL DSN string.
 	dsn := flag.String("dsn", "web:pass@/snippetbox?parseTime=true", "MySQL data source name")
-	
+
 	// Define a new command-line flag for the session secret
-	secret:=flag.String("secret","s6Ndh+pPbnzHbS*+9Pk8qGWhTzbpa@ge","Secret key")
+	secret := flag.String("secret", "s6Ndh+pPbnzHbS*+9Pk8qGWhTzbpa@ge", "Secret key")
 
 	//encountered during parsing the application will be terminated.
 	flag.Parse()
@@ -52,9 +52,9 @@ func main() {
 		errorLog.Fatal(err)
 	}
 
-
-	session:=sessions.New([]byte(*secret))
+	session := sessions.New([]byte(*secret))
 	session.Lifetime = 12 * time.Hour
+	session.Secure = true
 
 	// And add it to the application dependencies.
 	app := &application{
@@ -72,7 +72,7 @@ func main() {
 		Handler:  app.routes(),
 	}
 	infoLog.Printf("Starting server on %s", *addr)
-	err = srv.ListenAndServe()
+	err = srv.ListenAndServeTLS("./tls/cert.pem","./tls/key.pem")
 	errorLog.Fatal(err)
 }
 
