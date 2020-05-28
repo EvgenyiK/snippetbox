@@ -19,6 +19,7 @@ type Form struct {
 	Errors errors
 }
 
+//New func
 func New(data url.Values) *Form {
 	return &Form{
 		data,
@@ -75,7 +76,7 @@ func(f *Form)MinLength(field string,d int){
 		return
 	}
 	if utf8.RuneCountInString(value)<d {
-		f.Errors.Add(field,fmt.Sprintf("This field is too short (minimum is %d characters)"),d)
+		f.Errors.Add(field,fmt.Sprintf("This field is too short (minimum is %d characters)",d))
 	}
 }
 
