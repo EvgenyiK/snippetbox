@@ -57,6 +57,7 @@ func main() {
 	session := sessions.New([]byte(*secret))
 	session.Lifetime = 12 * time.Hour
 	session.Secure = true
+	
 
 	// And add it to the application dependencies.
 	app := &application{

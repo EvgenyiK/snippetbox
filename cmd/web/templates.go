@@ -15,6 +15,7 @@ any dynamic data that we want to pass to our HTML templates.
 */
 
 type templateData struct {
+	CSRFToken   string
 	CurrentYear int
 	Flash       string
 	Form        *forms.Form
