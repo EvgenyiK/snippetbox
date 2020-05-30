@@ -1,38 +1,24 @@
 package main
 
 import (
-	"io/ioutil"
 	"net/http"
-	"net/http/httptest"
 	"testing"
-	)
+)
 
 
 func TestPing(t *testing.T){
-	rr:=httptest.NewRecorder()
+	// Create a new instance of our application struct.
+	app:= newTestApplication(t)
+	ts:=newTestServer(t,app.routes())
+	defer ts.Close()
 
-	r,err:=http.NewRequest(http.MethodGet, "/", nil)
-	if err != nil {
-		t.Fatal(err)
+	code, _,body:= ts.get(t,"/ping")
+
+	if code != http.StatusOK{
+		t.Errorf("want %d; got %d", http.StatusOK, code)
 	}
 
-	// Call the ping handler function,
-	ping(rr,r)
-
-	// Call the Result() method on the http.ResponseRecorder
-	rs:=rr.Result()
-
-	if rs.StatusCode != http.StatusOK {
-		t.Errorf("want %d;got %d",http.StatusOK, rs.StatusCode)
-	}
-
-	// And we can check that the response body written by the ping handler
-	defer rs.Body.Close()
-	body, err:=ioutil.ReadAll(rs.Body)
-	if err !=nil {
-		t.Fatal(err)
-	}
-	if string(body)!= "OK" {
-		t.Errorf("want body to equal %q","OK")
+	if string(body) != "OK"{
+		t.Errorf("want body to equal %q", "OK")
 	}
 }
