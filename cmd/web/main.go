@@ -22,6 +22,7 @@ type contextKey string
 const contextKeyIsAuthenticated = contextKey("isAuthenticated")
 
 type application struct {
+	debug    bool
 	errorLog *log.Logger
 	infoLog  *log.Logger
 	session  *sessions.Session
@@ -31,7 +32,7 @@ type application struct {
 		Latest() ([]*models.Snippet, error)
 	}
 	templateCache map[string]*template.Template
-	users  interface {
+	users         interface {
 		Insert(string, string, string) error
 		Authenticate(string, string) (int, error)
 		Get(int) (*models.User, error)
@@ -42,6 +43,8 @@ type application struct {
 func main() {
 	// flag will be stored in the addr variable at runtime.
 	addr := flag.String("addr", ":4000", "HTTP network address")
+	// Create a new debug flag with the default value of false.
+	debug := flag.Bool("debug", false, "Enable debug mode")
 	// Define a new command-line flag for the MySQL DSN string.
 	dsn := flag.String("dsn", "web:pass@/snippetbox?parseTime=true", "MySQL data source name")
 
@@ -74,6 +77,7 @@ func main() {
 
 	// And add it to the application dependencies.
 	app := &application{
+		debug:         *debug,
 		errorLog:      errorLog,
 		infoLog:       infoLog,
 		session:       session,
