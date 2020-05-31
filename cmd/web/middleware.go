@@ -43,16 +43,14 @@ func (app *application) recoverPanic(next http.Handler) http.Handler {
 
 func (app *application) requireAuthentication(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// If the user is not authenticated, redirect them to the login page
 		if !app.isAuthenticated(r) {
+			// Add the path that the user is trying to access to their session
+			// data.
+			app.session.Put(r, "redirectPathAfterLogin", r.URL.Path)
 			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
 			return
 		}
-
-		// Otherwise set the "Cache-Control: no-store" header so that pages
-		w.Header().Add("Cashe-Control", "no-store")
-
-		// And call the next handler in the chain.
+		w.Header().Add("Cache-Control", "no-store")
 		next.ServeHTTP(w, r)
 	})
 }
@@ -68,28 +66,28 @@ func noSurf(next http.Handler) http.Handler {
 	return csrfHandler
 }
 
-func(app *application)authenticate(next http.Handler)http.Handler{
-	return http.HandlerFunc(func (w http.ResponseWriter, r *http.Request){
+func (app *application) authenticate(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Check if a authenticatedUserID value exists in the session. If this *isn't
 		// present* then call the next handler in the chain as normal.
-		exists:=app.session.Exists(r,"authenticatedUserID")
+		exists := app.session.Exists(r, "authenticatedUserID")
 		if !exists {
-			next.ServeHTTP(w,r)
+			next.ServeHTTP(w, r)
 			return
 		}
 		// Fetch the details of the current user from the database.
-		user,err:=app.users.Get(app.session.GetInt(r,"authenticatedUserID"))
-		if errors.Is(err,models.ErrNoRecord)|| !user.Active {
-			app.session.Remove(r,"authenticatedUserID")
-			next.ServeHTTP(w,r)
+		user, err := app.users.Get(app.session.GetInt(r, "authenticatedUserID"))
+		if errors.Is(err, models.ErrNoRecord) || !user.Active {
+			app.session.Remove(r, "authenticatedUserID")
+			next.ServeHTTP(w, r)
 			return
-		}else if err != nil{
-			app.serverError(w,err)
+		} else if err != nil {
+			app.serverError(w, err)
 			return
 		}
 
 		// Otherwise, we know that the request is coming from a active, authenticated,user
-		ctx:=context.WithValue(r.Context(),contextKeyIsAuthenticated, true)
-		next.ServeHTTP(w,r.WithContext(ctx))
+		ctx := context.WithValue(r.Context(), contextKeyIsAuthenticated, true)
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
