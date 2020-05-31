@@ -43,3 +43,7 @@ func(m *UserModel)Get(id int)(*models.User,error){
 	}
 }
 
+func (m *UserModel) ChangePassword(int, string, string) error {
+	return nil
+	}
+
