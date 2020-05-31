@@ -7,79 +7,78 @@ import (
 	"testing"
 )
 
-
-func TestPing(t *testing.T){
+func TestPing(t *testing.T) {
 	// Create a new instance of our application struct.
-	app:= newTestApplication(t)
-	ts:=newTestServer(t,app.routes())
+	app := newTestApplication(t)
+	ts := newTestServer(t, app.routes())
 	defer ts.Close()
 
-	code, _,body:= ts.get(t,"/ping")
+	code, _, body := ts.get(t, "/ping")
 
-	if code != http.StatusOK{
+	if code != http.StatusOK {
 		t.Errorf("want %d; got %d", http.StatusOK, code)
 	}
 
-	if string(body) != "OK"{
+	if string(body) != "OK" {
 		t.Errorf("want body to equal %q", "OK")
 	}
 }
 
-func TestShowSnippet(t *testing.T){
+func TestShowSnippet(t *testing.T) {
 	// Create a new instance of our application struct which uses the mocked
-	app:=newTestApplication(t)
-	ts:=newTestServer(t,app.routes())
+	app := newTestApplication(t)
+	ts := newTestServer(t, app.routes())
 	defer ts.Close()
 
 	// Set up some table-driven tests to check the responses sent
-	tests:=[]struct{
-		name string
-		urlPath string
+	tests := []struct {
+		name     string
+		urlPath  string
 		wantCode int
 		wantBody []byte
 	}{
-		{"Valid ID","/snippet/1",http.StatusOK,[]byte("An old silent pond...")},
-		{"Non-existent ID","/snippet/2", http.StatusNotFound, nil},
-		{"Negative ID","/snippet/-1",http.StatusNotFound,nil},
-		{"Negative ID","/snippet/1.23",http.StatusNotFound,nil},
-		{"Negative ID","/snippet/foo",http.StatusNotFound,nil},
-		{"Negative ID","/snippet/",http.StatusNotFound,nil},
-		{"Negative ID","/snippet/1/",http.StatusNotFound,nil},
+		{"Valid ID", "/snippet/1", http.StatusOK, []byte("An old silent pond...")},
+		{"Non-existent ID", "/snippet/2", http.StatusNotFound, nil},
+		{"Negative ID", "/snippet/-1", http.StatusNotFound, nil},
+		{"Negative ID", "/snippet/1.23", http.StatusNotFound, nil},
+		{"Negative ID", "/snippet/foo", http.StatusNotFound, nil},
+		{"Negative ID", "/snippet/", http.StatusNotFound, nil},
+		{"Negative ID", "/snippet/1/", http.StatusNotFound, nil},
 	}
 
-	for _,tt:=range tests{
-		t.Run(tt.name, func(t *testing.T){
-			code, _,body:=ts.get(t,tt.urlPath)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			code, _, body := ts.get(t, tt.urlPath)
 
-			if code !=tt.wantCode{
+			if code != tt.wantCode {
 				t.Errorf("want %d;got %d", tt.wantCode, code)
 			}
 
-			if !bytes.Contains(body, tt.wantBody){
+			if !bytes.Contains(body, tt.wantBody) {
 				t.Errorf("want body to contain %d", tt.wantBody)
 			}
 		})
 	}
 }
 
-func TestSignupUser(t *testing.T)  {
+func TestSignupUser(t *testing.T) {
 	// Create the application struct containing our mocked dependencies
-	app:=newTestApplication(t)
-	ts:=newTestServer(t,app.routes())
+	app := newTestApplication(t)
+	ts := newTestServer(t, app.routes())
 	defer ts.Close()
 
 	// Make a GET /user/signup request and then extract the CSRF
-	_,_,body:=ts.get(t,"/user/signup")
-	csrfToken:=extractCRFToken(t,body)
+	_, _, body := ts.get(t, "/user/signup")
+	csrfToken := extractCRFToken(t, body)
 
-	tests:=[]struct{
-		name	string
-		userName	string
-		userEmail	string
-		userPassword	string
-		csrfToken   string
-		wantCode	int
-		wantBody	[]byte
+	tests := []struct {
+		name         string
+		userName     string
+		userEmail    string
+		userPassword string
+		csrfToken    string
+		wantCode     int
+		wantBody     []byte
 	}{
 		{"Valid submission", "Bob", "bob@example.com", "validPa$$word", csrfToken, http.StatusSeeOther, nil},
 		{"Empty name", "", "bob@example.com", "validPa$$word", csrfToken, http.StatusOK, []byte("This field cannot be blank")},
@@ -93,23 +92,59 @@ func TestSignupUser(t *testing.T)  {
 		{"Invalid CSRF Token", "", "", "", "wrongToken", http.StatusBadRequest, nil},
 	}
 
-	for _, tt:=range tests{
-		t.Run(tt.name,func(t *testing.T){
-			form:=url.Values{}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			form := url.Values{}
 			form.Add("name", tt.userName)
 			form.Add("email", tt.userEmail)
 			form.Add("password", tt.userPassword)
 			form.Add("csrf_token", tt.csrfToken)
 
-			code,_,body:=ts.postForm(t,"/user/signup",form)
+			code, _, body := ts.postForm(t, "/user/signup", form)
 
-			if code != tt.wantCode{
-				t.Errorf("want %d;got %d",tt.wantCode, code)
+			if code != tt.wantCode {
+				t.Errorf("want %d;got %d", tt.wantCode, code)
 			}
 
-			if !bytes.Contains(body, tt.wantBody){
-				t.Errorf("want body %s to contain %q",body,tt.wantBody)
+			if !bytes.Contains(body, tt.wantBody) {
+				t.Errorf("want body %s to contain %q", body, tt.wantBody)
 			}
 		})
 	}
+}
+
+func TestCreateSnippetForm(t *testing.T) {
+	app := newTestApplication(t)
+	ts := newTestServer(t, app.routes())
+	defer ts.Close()
+
+	t.Run("Unauthenticated", func(t *testing.T) {
+		code, headers, _ := ts.get(t, "/snippet/create")
+		if code != http.StatusSeeOther {
+			t.Errorf("want %d; got %d", http.StatusSeeOther, code)
+		}
+		if headers.Get("Location") != "/user/login" {
+			t.Errorf("want %s; got %s", "/user/login", headers.Get("Location"))
+		}
+	})
+
+	t.Run("Authenticated", func(t *testing.T) {
+		// Authenticate the user...
+		_, _, body := ts.get(t, "/user/login")
+		csrfToken := extractCRFToken(t, body)
+		form := url.Values{}
+		form.Add("email", "alice@example.com")
+		form.Add("password", "")
+		form.Add("csrf_token", csrfToken)
+		ts.postForm(t, "/user/login", form)
+		// Then check that the authenticated user is shown the create snippet form.
+		code, _, body := ts.get(t, "/snippet/create")
+		if code != 200 {
+			t.Errorf("want %d; got %d", 200, code)
+		}
+		formTag := "<form action='/snippet/create' method='POST'>"
+		if !bytes.Contains(body, []byte(formTag)) {
+			t.Errorf("want body %s to contain %q", body, formTag)
+		}
+	})
 }

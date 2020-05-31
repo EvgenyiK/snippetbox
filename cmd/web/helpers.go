@@ -70,3 +70,5 @@ func (app *application) isAuthenticated(r *http.Request) bool {
 		}
 		return isAuthenticated
 	}
+
+
